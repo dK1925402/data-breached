@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breached Data Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col transition-colors duration-300">
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <img alt="Logo" class="h-10 w-10 rounded" src="https://storage.googleapis.com/a1aa/image/1acfbbd3-b343-4c92-56e0-f7c393210a33.jpg">
+                    <h1 class="text-2xl font-semibold text-gray-900">Breached Data Checker</h1>
+                </div>
+                <nav class="hidden md:flex space-x-8 text-gray-700 font-medium">
+                    <a href="#" class="hover:text-blue-600 transition">Home</a>
+                    <a href="#" class="hover:text-blue-600 transition">About</a>
+                    <a href="#" class="hover:text-blue-600 transition">Contact</a>
+                </nav>
+                <div class="md:hidden">
+                    <button aria-label="Open menu" class="text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600" id="menu-btn">
+                        <i class="fas fa-bars fa-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div class="max-w-xl w-full bg-white rounded-xl shadow-lg p-8">
+            <h2 class="text-center text-3xl font-extrabold text-gray-900 mb-6">Check if your email has been breached</h2>
+            <form class="flex flex-col sm:flex-row items-center gap-4" id="breachForm">
+                <label class="sr-only" for="email">Email address</label>
+                <input aria-label="Email address input" class="w-full sm:flex-1 px-4 py-3 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600" id="email" name="email" placeholder="Enter your email address" required type="email">
+                <button aria-label="Check breached data" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-md shadow focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition" type="submit">
+                    <i class="fas fa-search mr-2"></i>Check
+                </button>
+            </form>
+            <div id="results" class="mt-6"></div>
+            <p class="mt-6 text-center text-gray-500 text-sm">We respect your privacy. Your email is never stored.</p>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-sm">
+            © 2024 Breached Data Checker. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.getElementById('breachForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const apiUrl = `https://api.xposedornot.com/v1/breach-analytics?email=${email}`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                handleResults(data);
+            } catch (error) {
+                handleNoData();
+            }
+        });
+
+        function handleResults(data) {
+            let hasLeaks = false;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            try {
+                const breaches = data.ExposedBreaches.breaches_details || [];
+                hasLeaks = breaches.length > 0;
+
+                if (hasLeaks) {
+                    breaches.forEach(breach => {
+                        const breachDiv = document.createElement('div');
+                        breachDiv.classList.add('bg-red-200', 'p-4', 'rounded-md', 'mb-4');
+                        breachDiv.innerHTML = `
+                            <h3 class="text-lg font-semibold text-red-700">${breach.breach}</h3>
+                            <p class="text-sm text-gray-700">${breach.details}</p>
+                            <p class="text-sm text-gray-500 mt-2">Exposed data: ${breach.xposed_data}</p>
+                            <a href="${breach.references}" class="text-blue-600 underline text-sm" target="_blank">More info</a>
+                        `;
+                        resultsDiv.appendChild(breachDiv);
+                    });
+                }
+            } catch (error) {
+                hasLeaks = false;
+            }
+
+            document.body.style.backgroundColor = hasLeaks ? '#FFEBEB' : '#D1F7D1';
+            if (!hasLeaks) {
+                resultsDiv.innerHTML = '<p class="text-green-700 text-center text-lg font-semibold">😁 You are safe!</p>';
+            }
+        }
+
+        function handleNoData() {
+            document.body.style.backgroundColor = '#D1F7D1'; // Light green
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p class="text-green-700 text-center text-lg font-semibold">😁 You are safe!</p>';
+        }
+    </script>
+</body>
+</html>
